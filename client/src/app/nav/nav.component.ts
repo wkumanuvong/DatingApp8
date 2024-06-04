@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { AccountService } from '../_services/account.service';
 import { Observable, of } from 'rxjs';
 import { User } from '../_models/user';
+import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-nav',
@@ -11,8 +13,12 @@ import { User } from '../_models/user';
 export class NavComponent implements OnInit {
   // An object to hold login credentials (User).
   model: any = {};
- 
-  constructor(public accountService: AccountService) {}
+
+  constructor(
+    public accountService: AccountService,
+    private router: Router,
+    private toastr: ToastrService
+  ) {}
 
   // Decorators for defining Angular components and lifecycle hooks.
   ngOnInit(): void {
@@ -22,12 +28,9 @@ export class NavComponent implements OnInit {
   login() {
     // Calls the login() method of the AccountService with the login credentials stored in the model object.
     this.accountService.login(this.model).subscribe({
-      // The next callback handles the successful login response (User)
-      next: (response) => {
-        console.log(response);
-      },
+      next: () => this.router.navigateByUrl('/members'),
       // The error callback handles any errors that occur during the login process.
-      error: (error) => console.log(error),
+      error: (error) => this.toastr.error(error.error),
     });
   }
 
@@ -35,5 +38,6 @@ export class NavComponent implements OnInit {
   logout() {
     // Calls the logout() method of the AccountService
     this.accountService.logout();
+    this.router.navigateByUrl('/');
   }
 }
