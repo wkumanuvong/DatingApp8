@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, map } from 'rxjs';
 import { User } from '../_models/user';
+import { environment } from '../../environments/environment';
 
 // @Injectable decorator enables Angular's dependency injection system to provide the AccountService instance to other components as needed.
 @Injectable({
   providedIn: 'root',
 })
 export class AccountService {
-  baseUrl = 'https://localhost:5001/api/';
+  baseUrl = environment.apiUrl;
   // A BehaviorSubject that holds the currently logged-in user information.
   // It starts with null to indicate no initial user
   private currentUserSource = new BehaviorSubject<User | null>(null);
