@@ -28,10 +28,7 @@ export class AccountService {
         const user = response;
         // If a user object is returned
         if (user) {
-          // Stores the user information in local storage (JSON-stringified).
-          localStorage.setItem('user', JSON.stringify(user));
-          // Updates the currentUserSource with the user object, notifying subscribers.
-          this.currentUserSource.next(user);
+          this.setCurrentUser(user);
         }
       })
     );
@@ -42,10 +39,7 @@ export class AccountService {
     return this.http.post<User>(this.baseUrl + 'account/register', model).pipe(
       map((user) => {
         if (user) {
-          // Stores the registered user data in local storage and updates
-          localStorage.setItem('user', JSON.stringify(user));
-          // Updates the currentUserSource with the provided user object.
-          this.currentUserSource.next(user);
+          this.setCurrentUser(user);
         }
       })
     );
@@ -53,6 +47,8 @@ export class AccountService {
 
   // Allows direct setting of the current user, bypassing authentication requests.
   setCurrentUser(user: User) {
+    // Stores the registered user data in local storage and updates
+    localStorage.setItem('user', JSON.stringify(user));
     // Updates the currentUserSource with the provided user object.
     this.currentUserSource.next(user);
   }
