@@ -47,6 +47,10 @@ export class AccountService {
 
   // Allows direct setting of the current user, bypassing authentication requests.
   setCurrentUser(user: User) {
+    user.roles = [];
+    const roles = this.getDecodedToken(user.token).role;
+    Array.isArray(roles) ? (user.roles = roles) : user.roles.push(roles);
+
     // Stores the registered user data in local storage and updates
     localStorage.setItem('user', JSON.stringify(user));
     // Updates the currentUserSource with the provided user object.
@@ -58,5 +62,9 @@ export class AccountService {
     localStorage.removeItem('user');
     // Updates the currentUserSource with null to indicate no logged-in user.
     this.currentUserSource.next(null);
+  }
+
+  getDecodedToken(token: string) {
+    return JSON.parse(atob(token.split('.')[1]));
   }
 }
