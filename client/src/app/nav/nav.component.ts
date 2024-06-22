@@ -1,21 +1,29 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { AccountService } from '../_services/account.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { FormsModule } from '@angular/forms';
+import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
+import { HasRoleDirective } from '../_directives/has-role.directive';
 @Component({
   selector: 'app-nav',
   templateUrl: './nav.component.html',
   styleUrls: ['./nav.component.css'],
+  standalone: true,
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    HasRoleDirective,
+    BsDropdownModule,
+    FormsModule,
+  ],
 })
 export class NavComponent implements OnInit {
+  accountService = inject(AccountService);
+  private router = inject(Router);
+  private toastr = inject(ToastrService);
   // An object to hold login credentials (User).
   model: any = {};
-
-  constructor(
-    public accountService: AccountService,
-    private router: Router,
-    private toastr: ToastrService
-  ) {}
 
   // Decorators for defining Angular components and lifecycle hooks.
   ngOnInit(): void {}

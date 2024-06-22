@@ -1,35 +1,40 @@
-import { Component, OnInit } from '@angular/core';
-import { Member } from '../_models/member';
-import { Pagination } from '../_models/pagination';
-import { MembersService } from '../_services/members.service';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { LikesService } from '../_services/likes.service';
+import { PaginationModule } from 'ngx-bootstrap/pagination';
+import { MemberCardComponent } from '../members/member-card/member-card.component';
+import { FormsModule } from '@angular/forms';
+import { ButtonsModule } from 'ngx-bootstrap/buttons';
 
 @Component({
   selector: 'app-lists',
   templateUrl: './lists.component.html',
   styleUrl: './lists.component.css',
+  standalone: true,
+  imports: [ButtonsModule, FormsModule, MemberCardComponent, PaginationModule],
 })
-export class ListsComponent implements OnInit {
-  members: Member[] | undefined;
+export class ListsComponent implements OnInit, OnDestroy {
+  likesService = inject(LikesService);
   predicate = 'liked';
   pageNumber = 1;
   pageSize = 5;
-  pagination: Pagination | undefined;
-
-  constructor(private memberService: MembersService) {}
 
   ngOnInit(): void {
     this.loadLikes();
   }
 
+  getTitle() {
+    switch (this.predicate) {
+      case 'liked':
+        return 'Members you like';
+      case 'likedBy':
+        return 'Members who like you';
+      default:
+        return 'Mutual';
+    }
+  }
+
   loadLikes() {
-    this.memberService
-      .getLikes(this.predicate, this.pageNumber, this.pageSize)
-      .subscribe({
-        next: (response) => {
-          this.members = response.result;
-          this.pagination = response.pagination;
-        },
-      });
+    this.likesService.getLikes(this.predicate, this.pageNumber, this.pageSize);
   }
 
   pageChanged(event: any) {
@@ -37,5 +42,9 @@ export class ListsComponent implements OnInit {
       this.pageNumber = event.page;
       this.loadLikes();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.likesService.paginatedResult.set(null);
   }
 }

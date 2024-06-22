@@ -1,18 +1,17 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 @Component({
-  selector: 'app-test-errors',
-  templateUrl: './test-errors.component.html',
-  styleUrl: './test-errors.component.css',
+    selector: 'app-test-errors',
+    templateUrl: './test-errors.component.html',
+    styleUrl: './test-errors.component.css',
+    standalone: true,
 })
-export class TestErrorsComponent implements OnInit {
-  baseUrl = 'https://localhost:5001/api/';
+export class TestErrorsComponent {
+  baseUrl = environment.apiUrl;
+  private http = inject(HttpClient);
   validationErrors: string[] = [];
-
-  constructor(private http: HttpClient) {}
-
-  ngOnInit(): void {}
 
   get404Error() {
     this.http.get(this.baseUrl + 'buggy/not-found').subscribe({

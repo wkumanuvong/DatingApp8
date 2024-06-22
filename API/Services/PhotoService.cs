@@ -32,7 +32,7 @@ public class PhotoService : IPhotoService
             {
                 File = new FileDescription(file.FileName, stream),
                 Transformation = new Transformation().Height(500).Width(500).Crop("fill").Gravity("face"),
-                Folder = "da-net7"
+                Folder = "da-net8"
             };
             uploadResult = await _cloudinary.UploadAsync(uploadParams);
         }

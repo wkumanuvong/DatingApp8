@@ -1,8 +1,7 @@
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, ViewChild, inject, input, output } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { Message } from '../../_models/message';
 import { MessageService } from '../../_services/message.service';
-import { CommonModule } from '@angular/common';
 import { TimeagoModule } from 'ngx-timeago';
 
 @Component({
@@ -10,25 +9,22 @@ import { TimeagoModule } from 'ngx-timeago';
   standalone: true,
   templateUrl: './member-messages.component.html',
   styleUrl: './member-messages.component.css',
-  imports: [CommonModule, TimeagoModule, FormsModule],
+  imports: [TimeagoModule, FormsModule],
 })
-export class MemberMessagesComponent implements OnInit {
+export class MemberMessagesComponent {
   @ViewChild('messageForm') messageForm?: NgForm;
-  @Input() username?: string;
-  @Input() messages: Message[] = [];
+  private messageService = inject(MessageService);
+  username = input.required<string>();
+  messages = input.required<Message[]>();
   messageContent = '';
-
-  constructor(private messageService: MessageService) {}
-
-  ngOnInit(): void {}
+  updateMessages = output<Message>();
 
   sendMessage() {
-    if (!this.username) return;
     this.messageService
-      .sendMessage(this.username, this.messageContent)
+      .sendMessage(this.username(), this.messageContent)
       .subscribe({
         next: (message) => {
-          this.messages.push(message);
+          this.updateMessages.emit(message);
           this.messageForm?.reset();
         },
       });

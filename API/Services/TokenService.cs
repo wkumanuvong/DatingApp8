@@ -8,28 +8,26 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace API.Services;
 
-public class TokenService : ITokenservice
+public class TokenService(IConfiguration config, UserManager<AppUser> userManager) : ITokenservice
 {
-    private readonly SymmetricSecurityKey _key;
-    private readonly UserManager<AppUser> _userManager;
-
-    public TokenService(IConfiguration config, UserManager<AppUser> userManager)
-    {
-        _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["TokenKey"]));
-        _userManager = userManager;
-    }
     public async Task<string> CreateToken(AppUser user)
     {
+        var tokenKey = config["TokenKey"] ?? throw new Exception("Cannot access tokenKey from appsettings");
+        if (tokenKey.Length < 64) throw new Exception("Your tokenKey needs to be longer");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey));
+
         if (user.UserName == null) throw new Exception("No username for user");
+
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.NameId, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName),
         };
-        var roles = await _userManager.GetRolesAsync(user);
+
+        var roles = await userManager.GetRolesAsync(user);
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {

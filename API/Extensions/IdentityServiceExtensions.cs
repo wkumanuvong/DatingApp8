@@ -10,7 +10,7 @@ namespace API.Extensions;
 public static class IdentityServiceExtensions
 {
     public static IServiceCollection AddIdentityServices(this IServiceCollection services,
-    IConfiguration config)
+        IConfiguration config)
     {
         services.AddIdentityCore<AppUser>(opt =>
         {
@@ -23,23 +23,19 @@ public static class IdentityServiceExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
+                var tokenKey = config["TokenKey"] ?? throw new Exception("TokenKey not found");
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding
-                        .UTF8.GetBytes(config["TokenKey"])),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
                     ValidateIssuer = false,
                     ValidateAudience = false
                 };
             });
 
-        services.AddAuthorization(opt =>
-        {
-            opt.AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"));
-            opt.AddPolicy("ModeratePhotoRole", policy => policy.RequireRole("Admin", "Moderator"));
-
-        });
-
+        services.AddAuthorizationBuilder()        
+            .AddPolicy("RequireAdminRole", policy => policy.RequireRole("Admin"))
+            .AddPolicy("ModeratePhotoRole", policy => policy.RequireRole("Admin", "Moderator"));        
 
         return services;
     }

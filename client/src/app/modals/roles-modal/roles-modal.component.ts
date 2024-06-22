@@ -1,23 +1,31 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 
 @Component({
   selector: 'app-roles-modal',
   templateUrl: './roles-modal.component.html',
   styleUrl: './roles-modal.component.css',
+  standalone: true,
+  imports: [],
 })
 export class RolesModalComponent {
+  bsModalRef = inject(BsModalRef);
   title = '';
   username = '';
   availableRoles: string[] = [];
   selectedRoles: string[] = [];
-
-  constructor(public bsModalRef: BsModalRef) {}
+  rolesUpdated = false;
 
   updateChecked(checkedValue: string) {
-    const index = this.selectedRoles.indexOf(checkedValue);
-    index !== -1
-      ? this.selectedRoles.splice(index, 1)
-      : this.selectedRoles.push(checkedValue);
+    if (this.selectedRoles.includes(checkedValue)) {
+      this.selectedRoles = this.selectedRoles.filter((r) => r !== checkedValue);
+    } else {
+      this.selectedRoles.push(checkedValue);
+    }
+  }
+
+  onSelectRoles() {
+    this.rolesUpdated = true;
+    this.bsModalRef.hide();
   }
 }

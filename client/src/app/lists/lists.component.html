@@ -1,33 +1,60 @@
 <div class="text-center mt-3">
-    <h2>{{predicate === 'liked' ? 'Members I like' : 'Members who like me'}}</h2>
+  <h2>{{ getTitle() }}</h2>
 </div>
 
 <div class="container mt-3">
-    <div class="d-flex">
-        <div class="btn-group" name="predicate">
-            <button class="btn btn-primary" btnRadio="liked" [(ngModel)]="predicate" (click)="loadLikes()">Members I like</button>
-            <button class="btn btn-primary" btnRadio="likedBy" [(ngModel)]="predicate" (click)="loadLikes()">Members who like me</button>
-        </div>
+  <div class="d-flex">
+    <div class="btn-group">
+      <button
+        class="btn btn-primary"
+        btnRadio="liked"
+        [(ngModel)]="predicate"
+        (click)="loadLikes()"
+      >
+        Members I like
+      </button>
+      <button
+        class="btn btn-primary"
+        btnRadio="likedBy"
+        [(ngModel)]="predicate"
+        (click)="loadLikes()"
+      >
+        Members who like me
+      </button>
+      <button
+        class="btn btn-primary"
+        btnRadio="mutual"
+        [(ngModel)]="predicate"
+        (click)="loadLikes()"
+      >
+        Mutual
+      </button>
     </div>
+  </div>
 
-    <div class="row mt-3">
-        <div class="col-2" *ngFor="let member of members">
-            <app-member-card [member]="member"></app-member-card>
-        </div>
+  <div class="row mt-3">
+    @for (member of likesService.paginatedResult()?.items; track member.id) {
+    <div class="col-2">
+      <app-member-card [member]="member"></app-member-card>
     </div>
+    }
+  </div>
 </div>
 
-<div class="d-flex justify-content-center" *ngIf="pagination">
-    <pagination
-        [boundaryLinks]="true"
-        [totalItems]="pagination.totalItems"
-        [itemsPerPage]="pagination.itemsPerPage"
-        [(ngModel)]="pagination.currentPage"
-        (pageChanged)="pageChanged($event)"
-        [maxSize]="10"
-        previousText="&lsaquo;"
-        nextText="&rsaquo;"
-        firstText="&laquo;"
-        lastText="&raquo;">
-    </pagination>
+@if (likesService.paginatedResult()?.pagination) {
+<div class="d-flex justify-content-center">
+  <pagination
+    [boundaryLinks]="true"
+    [totalItems]="(likesService.paginatedResult()?.pagination)!.totalItems"
+    [itemsPerPage]="(likesService.paginatedResult()?.pagination)!.itemsPerPage"
+    [(ngModel)]="(likesService.paginatedResult()?.pagination)!.currentPage"
+    (pageChanged)="pageChanged($event)"
+    [maxSize]="10"
+    previousText="&lsaquo;"
+    nextText="&rsaquo;"
+    firstText="&laquo;"
+    lastText="&raquo;"
+  >
+  </pagination>
 </div>
+}

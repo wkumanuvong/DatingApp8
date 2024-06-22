@@ -10,19 +10,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers;
 
 [Authorize]
-public class MessagesController : BaseApiController
+public class MessagesController(IUserRepository userRepository,
+    IMessageRepository messageRepository, IMapper mapper) : BaseApiController
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IMessageRepository _messageRepository;
-    private readonly IMapper _mapper;
-    public MessagesController(IUserRepository userRepository,
-        IMessageRepository messageRepository, IMapper mapper)
-    {
-        _mapper = mapper;
-        _messageRepository = messageRepository;
-        _userRepository = userRepository;
-    }
-
     [HttpPost]
     public async Task<ActionResult<MessageDto>> CreateMessage(CreateMessageDto createMessageDto)
     {
@@ -31,10 +21,11 @@ public class MessagesController : BaseApiController
         if (username == createMessageDto.RecipientUsername.ToLower())
             return BadRequest("You cannot send messages to yourself");
 
-        var sender = await _userRepository.GetUserByUsernameAsync(username);
-        var recipient = await _userRepository.GetUserByUsernameAsync(createMessageDto.RecipientUsername);
+        var sender = await userRepository.GetUserByUsernameAsync(username);
+        var recipient = await userRepository.GetUserByUsernameAsync(createMessageDto.RecipientUsername);
 
-        if (recipient == null) return NotFound();
+        if (recipient == null || sender == null || sender.UserName == null || recipient.UserName == null)
+            return BadRequest("Cannot send message at this time");
 
         var message = new Message
         {
@@ -45,9 +36,9 @@ public class MessagesController : BaseApiController
             Content = createMessageDto.Content
         };
 
-        _messageRepository.AddMessage(message);
+        messageRepository.AddMessage(message);
 
-        if (await _messageRepository.SaveAllAsync()) return Ok(_mapper.Map<MessageDto>(message));
+        if (await messageRepository.SaveAllAsync()) return Ok(mapper.Map<MessageDto>(message));
 
         return BadRequest("Failed to send message");
     }
@@ -58,10 +49,9 @@ public class MessagesController : BaseApiController
     {
         messageParams.Username = User.GetUsername();
 
-        var messages = await _messageRepository.GetMessagesForUser(messageParams);
+        var messages = await messageRepository.GetMessagesForUser(messageParams);
 
-        Response.AddPaginationHeader(new PaginationHeader(messages.CurrentPage,
-            messages.PageSize, messages.TotalCount, messages.TotalPages));
+        Response.AddPaginationHeader(messages);
 
         return messages;
     }
@@ -71,7 +61,7 @@ public class MessagesController : BaseApiController
     {
         var currentUsername = User.GetUsername();
 
-        return Ok(await _messageRepository.GetMessageThread(currentUsername, username));
+        return Ok(await messageRepository.GetMessageThread(currentUsername, username));
     }
 
     [HttpDelete("{id}")]
@@ -79,19 +69,20 @@ public class MessagesController : BaseApiController
     {
         var username = User.GetUsername();
 
-        var message = await _messageRepository.GetMessage(id);
+        var message = await messageRepository.GetMessage(id);
+        if (message == null) return BadRequest("Cannot delete this message");
 
         if (message.SenderUsername != username && message.RecipientUsername != username)
-            return Unauthorized();
+            return Forbid();
 
         if (message.SenderUsername == username) message.SenderDeleted = true;
         if (message.RecipientUsername == username) message.RecipientDeleted = true;
-        if (message.SenderDeleted && message.RecipientDeleted)
+        if (message is { SenderDeleted: true, RecipientDeleted: true })
         {
-            _messageRepository.DeleteMessage(message);
+            messageRepository.DeleteMessage(message);
         }
 
-        if (await _messageRepository.SaveAllAsync()) return Ok();
+        if (await messageRepository.SaveAllAsync()) return Ok();
 
         return BadRequest("Problem deleting the message");
     }

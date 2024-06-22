@@ -1,60 +1,72 @@
 ﻿using API.DTOs;
 using API.Entities;
-using API.Extensions;
 using API.Helpers;
 using API.Interfaces;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Data;
 
-public class LikesRepository : ILikesRepository
+public class LikesRepository(DataContext context, IMapper mapper) : ILikesRepository
 {
-    private readonly DataContext _context;
-    public LikesRepository(DataContext context)
+    public void AddLike(UserLike like)
     {
-        _context = context;
-
+        context.Likes.Add(like);
     }
 
-    public async Task<UserLike> GetUserLike(int sourceUserId, int targetUserId)
+    public void DeleteLike(UserLike like)
     {
-        return await _context.Likes.FindAsync(sourceUserId, targetUserId);
+        context.Likes.Remove(like);
     }
 
-    public async Task<PagedList<LikeDto>> GetUserLikes(LikesParams likesParams)
+    public async Task<IEnumerable<int>> GetCurrentUserLikeIds(int currentUserId)
     {
-        var users = _context.Users.OrderBy(u => u.UserName).AsQueryable();
-        var likes = _context.Likes.AsQueryable();
+        return await context.Likes
+            .Where(x => x.SourceUserId == currentUserId)
+            .Select(x => x.TargetUserId)
+            .ToListAsync();
+    }
 
-        if (likesParams.Predicate == "liked")
+    public async Task<UserLike?> GetUserLike(int sourceUserId, int targetUserId)
+    {
+        return await context.Likes.FindAsync(sourceUserId, targetUserId);
+    }
+
+    public async Task<PagedList<MemberDto>> GetUserLikes(LikesParams likesParams)
+    {
+        var likes = context.Likes.AsQueryable();
+        IQueryable<MemberDto> query;
+
+        switch (likesParams.Predicate)
         {
-            likes = likes.Where(like => like.SourceUserId == likesParams.UserId);
-            users = likes.Select(like => like.TargetUser);
+            case "liked":
+                query = likes
+                    .Where(x => x.SourceUserId == likesParams.UserId)
+                    .Select(x => x.TargetUser)
+                    .ProjectTo<MemberDto>(mapper.ConfigurationProvider);
+                break;
+            case "likedBy":
+                query = likes
+                    .Where(x => x.TargetUserId == likesParams.UserId)
+                    .Select(x => x.SourceUser)
+                    .ProjectTo<MemberDto>(mapper.ConfigurationProvider);
+                break;
+            default:
+                var likeIds = await GetCurrentUserLikeIds(likesParams.UserId);
+
+                query = likes
+                    .Where(x => x.TargetUserId == likesParams.UserId && likeIds.Contains(x.SourceUserId))
+                    .Select(x => x.SourceUser)
+                    .ProjectTo<MemberDto>(mapper.ConfigurationProvider);
+                break;
         }
 
-        if (likesParams.Predicate == "likedBy")
-        {
-            likes = likes.Where(like => like.TargetUserId == likesParams.UserId);
-            users = likes.Select(like => like.SourceUser);
-        }
-
-        var likedUsers = users.Select(user => new LikeDto
-        {
-            UserName = user.UserName,
-            KnownAs = user.KnownAs,
-            Age = user.DateOfBirth.CalculateAge(),
-            PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain).Url,
-            City = user.City,
-            Id = user.Id
-        });
-
-        return await PagedList<LikeDto>.CreateAsync(likedUsers, likesParams.PageNumber, likesParams.PageSize);
+        return await PagedList<MemberDto>.CreateAsync(query, likesParams.PageNumber, likesParams.PageSize);
     }
 
-    public async Task<AppUser> GetUserWithLikes(int userId)
+    public async Task<bool> SaveChanges()
     {
-        return await _context.Users
-            .Include(x => x.LikedUsers)
-            .FirstOrDefaultAsync(x => x.Id == userId);
+        return await context.SaveChangesAsync() > 0;
     }
 }

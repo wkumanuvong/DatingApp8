@@ -1,14 +1,21 @@
-import { Component, Input, Self } from '@angular/core';
-import { ControlValueAccessor, FormControl, NgControl } from '@angular/forms';
+import { Component, Self, input } from '@angular/core';
+import { ControlValueAccessor, FormControl, NgControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { NgIf } from '@angular/common';
 
 @Component({
-  selector: 'app-text-input',
-  templateUrl: './text-input.component.html',
-  styleUrl: './text-input.component.css',
+    selector: 'app-text-input',
+    templateUrl: './text-input.component.html',
+    styleUrl: './text-input.component.css',
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        NgIf,
+    ],
 })
 export class TextInputComponent implements ControlValueAccessor {
-  @Input() label = '';
-  @Input() type = 'text';
+  label = input<string>('');
+  type = input<string>('text');
 
   constructor(@Self() public ngControl: NgControl) {
     this.ngControl.valueAccessor = this;

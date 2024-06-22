@@ -1,33 +1,30 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, OnInit, inject, output } from '@angular/core';
 import { AccountService } from '../_services/account.service';
-import { ToastrService } from 'ngx-toastr';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormControl,
-  FormGroup,
-  ValidatorFn,
-  Validators,
-} from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { DatePickerComponent } from '../_forms/date-picker/date-picker.component';
+import { TextInputComponent } from '../_forms/text-input/text-input.component';
 
 @Component({
-  selector: 'app-register',
-  templateUrl: './register.component.html',
-  styleUrls: ['./register.component.css'],
+    selector: 'app-register',
+    templateUrl: './register.component.html',
+    styleUrls: ['./register.component.css'],
+    standalone: true,
+    imports: [
+        FormsModule,
+        ReactiveFormsModule,
+        TextInputComponent,
+        DatePickerComponent,
+    ],
 })
 export class RegisterComponent implements OnInit {
-  @Output() cancelRegister = new EventEmitter();
+  private accountService = inject(AccountService);
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  cancelRegister = output<boolean>();
   registerForm: FormGroup = new FormGroup({});
   maxDate: Date = new Date();
   validationErrors: string[] | undefined;
-
-  constructor(
-    private accountService: AccountService,
-    private toastr: ToastrService,
-    private fb: FormBuilder,
-    private router: Router
-  ) {}
 
   ngOnInit(): void {
     this.initializeForm();
@@ -66,20 +63,13 @@ export class RegisterComponent implements OnInit {
   }
 
   register() {
-    const dob = this.GetDateOnly(
-      this.registerForm.controls['dateOfBirth'].value
+    const dob = this.getDateOnly(
+      this.registerForm.controls['dateOfBirth']?.value
     );
-    const values = {
-      ...this.registerForm.value,
-      dateOfBirth: this.GetDateOnly(dob),
-    };
-    this.accountService.register(values).subscribe({
-      next: (response) => {
-        this.router.navigateByUrl('/members');
-      },
-      error: (error) => {
-        this.validationErrors = error;
-      },
+    this.registerForm.patchValue({ dateOfBirth: dob });    
+    this.accountService.register(this.registerForm.value).subscribe({
+      next: () => this.router.navigateByUrl('/members'),
+      error: (error) => (this.validationErrors = error),
     });
   }
 
@@ -87,13 +77,8 @@ export class RegisterComponent implements OnInit {
     this.cancelRegister.emit(false);
   }
 
-  private GetDateOnly(dob: string | undefined) {
+  private getDateOnly(dob: string | undefined) {
     if (!dob) return;
-    let theDob = new Date(dob);
-    return new Date(
-      theDob.setMinutes(theDob.getMinutes() - theDob.getTimezoneOffset())
-    )
-      .toISOString()
-      .slice(0, 10);
+    return new Date(dob).toISOString().slice(0, 10);
   }
 }

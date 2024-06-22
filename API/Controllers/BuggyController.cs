@@ -5,15 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
-public class BuggyController : BaseApiController
+public class BuggyController(DataContext context) : BaseApiController
 {
-    private readonly DataContext _context;
-
-    public BuggyController(DataContext context)
-    {
-        _context = context;
-    }
-
     [Authorize]
     [HttpGet("auth")]
     public ActionResult<string> GetSecret()
@@ -24,7 +17,7 @@ public class BuggyController : BaseApiController
     [HttpGet("not-found")]
     public ActionResult<AppUser> GetNotFound()
     {
-        var thing = _context.Users.Find(-1);
+        var thing = context.Users.Find(-1);
 
         if (thing == null) return NotFound();
 
@@ -32,13 +25,11 @@ public class BuggyController : BaseApiController
     }
 
     [HttpGet("server-error")]
-    public ActionResult<string> GetServerError()
+    public ActionResult<AppUser> GetServerError()
     {
-        var thing = _context.Users.Find(-1);
+        var thing = context.Users.Find(-1) ?? throw new Exception("A bad thing has happened");
 
-        var thingToReturn = thing.ToString();
-
-        return thingToReturn;
+        return thing;
     }
 
     [HttpGet("bad-request")]

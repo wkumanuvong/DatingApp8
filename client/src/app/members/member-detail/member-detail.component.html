@@ -54,11 +54,13 @@
         #photoTab="tab"
         (selectTab)="onTabActivated($event)"
       >
+        @if (photoTab.active) {
         <gallery
-          *ngIf="photoTab.active"
           [items]="images"
+          [itemAutosize]="true"
           class="gallery"
         ></gallery>
+        }
       </tab>
       <tab heading="Messages" (selectTab)="onTabActivated($event)">
         <app-member-messages
