@@ -4,21 +4,18 @@ import { User } from './_models/user';
 import { RouterOutlet } from '@angular/router';
 import { NavComponent } from './nav/nav.component';
 import { NgxSpinnerComponent } from 'ngx-spinner';
+import { HomeComponent } from './home/home.component';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrl: './app.component.css',
-    standalone: true,
-    imports: [
-        NgxSpinnerComponent,
-        NavComponent,
-        RouterOutlet,
-    ],
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css',
+  standalone: true,
+  imports: [RouterOutlet, NavComponent, HomeComponent, NgxSpinnerComponent],
 })
 export class AppComponent implements OnInit {
   private accountService = inject(AccountService);
-  
+
   ngOnInit(): void {
     this.setCurrentUser();
   }
