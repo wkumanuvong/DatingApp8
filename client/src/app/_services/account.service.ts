@@ -4,6 +4,7 @@ import { map } from 'rxjs';
 import { User } from '../_models/user';
 import { environment } from '../../environments/environment';
 import { LikesService } from './likes.service';
+import { PresenceService } from './presence.service';
 
 // @Injectable decorator enables Angular's dependency injection system to provide the AccountService instance to other components as needed.
 @Injectable({
@@ -12,6 +13,7 @@ import { LikesService } from './likes.service';
 export class AccountService {
   private http = inject(HttpClient);
   private likeService = inject(LikesService);
+  private presenceService = inject(PresenceService);
   baseUrl = environment.apiUrl;
   // A BehaviorSubject that holds the currently logged-in user information.
   // It starts with null to indicate no initial user
@@ -28,7 +30,6 @@ export class AccountService {
     }
     return [];
   });
-  
 
   login(model: any) {
     // Makes a POST request to the account/login API endpoint with the provided login credentials (model).
@@ -65,6 +66,7 @@ export class AccountService {
     localStorage.setItem('user', JSON.stringify(user));
     this.currentUser.set(user);
     this.likeService.getLikeIds();
+    this.presenceService.createHubConnection(user);
   }
 
   logout() {
@@ -72,6 +74,7 @@ export class AccountService {
     localStorage.removeItem('user');
     // Updates the currentUser with null to indicate no logged-in user.
     this.currentUser.set(null);
+    this.presenceService.stopHubConnection();
   }
 
   getDecodedToken(token: string) {
