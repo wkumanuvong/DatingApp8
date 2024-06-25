@@ -1,10 +1,8 @@
-import { Component, Input, OnInit, inject, input, output } from '@angular/core';
+import { Component, OnInit, inject, input, output } from '@angular/core';
 import { Member } from '../../_models/member';
 import { environment } from '../../../environments/environment';
-import { User } from '../../_models/user';
 import { AccountService } from '../../_services/account.service';
 import { MembersService } from '../../_services/members.service';
-import { take } from 'rxjs';
 import { FileUploader, FileUploadModule } from 'ng2-file-upload';
 import { Photo } from '../../_models/photo';
 import { NgClass, NgIf, NgFor, NgStyle, DecimalPipe } from '@angular/common';

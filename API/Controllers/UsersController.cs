@@ -27,7 +27,8 @@ public class UsersController(IUnitOfWork unitOfWork, IMapper mapper, IPhotoServi
     [HttpGet("{username}")]
     public async Task<ActionResult<MemberDto?>> GetUser(string username)
     {
-        return await unitOfWork.UserRepository.GetMemberAsync(username);
+        var currentUsername = User.GetUsername();
+        return await unitOfWork.UserRepository.GetMemberAsync(username, isCurrentUser: currentUsername == username);
     }
 
     [HttpPut]
@@ -49,10 +50,9 @@ public class UsersController(IUnitOfWork unitOfWork, IMapper mapper, IPhotoServi
     public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
     {
         var user = await unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUsername());
-        if (user == null) return NotFound();
+        if (user == null) return BadRequest("Cannot update user");
 
         var result = await photoService.AddPhotoAsync(file);
-
         if (result.Error != null) return BadRequest(result.Error.Message);
 
         var photo = new Photo
@@ -60,8 +60,6 @@ public class UsersController(IUnitOfWork unitOfWork, IMapper mapper, IPhotoServi
             Url = result.SecureUrl.AbsoluteUri,
             PublicId = result.PublicId
         };
-
-        if (user.Photos.Count == 0) photo.IsMain = true;
 
         user.Photos.Add(photo);
 
@@ -98,7 +96,7 @@ public class UsersController(IUnitOfWork unitOfWork, IMapper mapper, IPhotoServi
         var user = await unitOfWork.UserRepository.GetUserByUsernameAsync(User.GetUsername());
         if (user == null) return BadRequest("User not found!");
 
-        var photo = user.Photos.FirstOrDefault(x => x.Id == photoId);
+        var photo = await unitOfWork.PhotoRepository.GetPhotoById(photoId);
         if (photo == null) return BadRequest("Photo not found!");
 
         if (photo.IsMain) return BadRequest("You cannot delete your main photo");
